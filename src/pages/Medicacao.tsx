@@ -1,0 +1,219 @@
+import { useState } from 'react';
+import { Plus, Pill, Droplet, CircleDot, X, Clock } from 'lucide-react';
+import { Medication, medicationTypeLabels, frequencyLabels } from '@/types/stepio';
+import { getMedicationSchedule } from '@/utils/medicationUtils';
+import { cn } from '@/lib/utils';
+
+interface MedicacaoProps {
+  medications: Medication[];
+  onAdd: (medication: Omit<Medication, 'id'>) => void;
+  onDelete: (id: string) => void;
+}
+
+const typeIcons = {
+  xarope: Droplet,
+  comprimido: Pill,
+  gotas: CircleDot,
+  pomada: CircleDot,
+};
+
+const typeColors = {
+  xarope: 'bg-pink-100 text-pink-600',
+  comprimido: 'bg-blue-100 text-blue-600',
+  gotas: 'bg-amber-100 text-amber-600',
+  pomada: 'bg-green-100 text-green-600',
+};
+
+export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'xarope' as Medication['type'],
+    dosage: '',
+    frequency: 'diario' as Medication['frequency'],
+    startTime: '08:00',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.name && formData.dosage) {
+      onAdd(formData);
+      setFormData({
+        name: '',
+        type: 'xarope',
+        dosage: '',
+        frequency: 'diario',
+        startTime: '08:00',
+      });
+      setShowForm(false);
+    }
+  };
+
+  return (
+    <div className="pb-24">
+      {/* Header */}
+      <header className="p-4">
+        <h1 className="text-2xl font-bold">Medicações 💊</h1>
+        <p className="text-muted-foreground">Gerencie os remédios do seu pequeno</p>
+      </header>
+
+      {/* List */}
+      <main className="px-4 space-y-3">
+        {medications.length === 0 ? (
+          <div className="stepio-card text-center py-8">
+            <Pill className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground mb-2">Nenhuma medicação cadastrada</p>
+            <p className="text-sm text-muted-foreground">
+              Toque no + para adicionar
+            </p>
+          </div>
+        ) : (
+          medications.map((med) => {
+            const Icon = typeIcons[med.type];
+            const colorClass = typeColors[med.type];
+            const schedule = getMedicationSchedule(med);
+
+            return (
+              <div key={med.id} className="stepio-card">
+                <div className="flex items-start gap-3">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colorClass}`}>
+                    <Icon size={24} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold">{med.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {med.dosage} • {medicationTypeLabels[med.type]}
+                    </p>
+                    <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                      <Clock size={14} />
+                      <span>{schedule.join(', ')}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => onDelete(med.id)}
+                    className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </main>
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowForm(true)}
+        className="stepio-fab"
+      >
+        <Plus size={28} />
+      </button>
+
+      {/* Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
+          <div className="bg-background w-full max-w-md rounded-t-3xl p-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Nova Medicação</h2>
+              <button
+                onClick={() => setShowForm(false)}
+                className="p-2 hover:bg-muted rounded-xl transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">Nome do remédio</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ex: Risperidona"
+                  className="stepio-input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Tipo</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['xarope', 'comprimido', 'gotas', 'pomada'] as const).map((type) => {
+                    const Icon = typeIcons[type];
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, type })}
+                        className={cn(
+                          'p-3 rounded-xl border-2 flex flex-col items-center gap-1 transition-all',
+                          formData.type === type
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border'
+                        )}
+                      >
+                        <Icon size={20} />
+                        <span className="text-xs">{medicationTypeLabels[type]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Dosagem</label>
+                <input
+                  type="text"
+                  value={formData.dosage}
+                  onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+                  placeholder="Ex: 5ml ou 1 comprimido"
+                  className="stepio-input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Frequência</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['diario', '12h', '8h', 'sob_demanda'] as const).map((freq) => (
+                    <button
+                      key={freq}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, frequency: freq })}
+                      className={cn(
+                        'p-3 rounded-xl border-2 text-sm font-medium transition-all',
+                        formData.frequency === freq
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border'
+                      )}
+                    >
+                      {frequencyLabels[freq]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Horário inicial</label>
+                <input
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  className="stepio-input w-full"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!formData.name || !formData.dosage}
+                className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-lg transition-all duration-200 disabled:opacity-50"
+              >
+                Salvar Medicação
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
