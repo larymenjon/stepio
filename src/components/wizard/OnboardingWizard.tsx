@@ -3,7 +3,7 @@ import { WizardStep1 } from './WizardStep1';
 import { WizardStep2 } from './WizardStep2';
 import { WizardStep3 } from './WizardStep3';
 import { ConditionType } from '@/types/stepio';
-import { Puzzle } from 'lucide-react';
+import stepioLogo from '@/assets/stepio-logo.png';
 
 interface OnboardingWizardProps {
   onComplete: (data: {
@@ -44,9 +44,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="p-4 flex items-center justify-center gap-2">
-        <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-          <Puzzle className="w-5 h-5 text-primary-foreground" />
-        </div>
+        <img src={stepioLogo} alt="Stepio" className="w-12 h-12 object-contain" />
         <span className="text-xl font-bold text-primary">Stepio</span>
       </div>
 
