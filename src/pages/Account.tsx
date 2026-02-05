@@ -88,7 +88,7 @@ const Account = () => {
     <div className="mobile-container pb-24">
       <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <div className="stepio-header-card text-left">
+          <div className="stepio-header-card text-center">
             <button
               type="button"
               onClick={() => navigate("/")}

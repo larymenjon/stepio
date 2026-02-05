@@ -1,6 +1,4 @@
 import { auth } from "@/lib/firebase";
-import { Browser } from "@capacitor/browser";
-import { Capacitor } from "@capacitor/core";
 
 const BILLING_BASE = import.meta.env.VITE_BILLING_URL ?? "http://localhost:4242";
 
@@ -28,11 +26,7 @@ export async function createCheckoutSession(priceId: string) {
   }
 
   const data = await response.json();
-  const url = data.url as string;
-  if (Capacitor.isNativePlatform()) {
-    await Browser.open({ url });
-  }
-  return url;
+  return data.url as string;
 }
 
 export async function createPortalSession() {
@@ -51,9 +45,5 @@ export async function createPortalSession() {
   }
 
   const data = await response.json();
-  const url = data.url as string;
-  if (Capacitor.isNativePlatform()) {
-    await Browser.open({ url });
-  }
-  return url;
+  return data.url as string;
 }

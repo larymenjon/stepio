@@ -56,7 +56,7 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
       {/* Header */}
             <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <div className="stepio-header-card text-left">
+          <div className="stepio-header-card text-center">
             <h1 className="text-2xl font-bold">Medicações 💊</h1>
             <p className="text-muted-foreground">Gerencie os remédios do seu pequeno</p>
           </div>

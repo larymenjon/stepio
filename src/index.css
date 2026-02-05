@@ -175,37 +175,33 @@
   }
 
   .stepio-nav-item-active {
-    @apply text-primary bg-primary/10;
+    @apply text-emerald-600 bg-emerald-50;
   }
 
   .mobile-container {
     @apply max-w-md mx-auto min-h-screen relative pt-2;
-    background: linear-gradient(
-      180deg,
-      hsl(var(--pink) / 0.22) 0%,
-      hsl(var(--background)) 140px
-    );
+    background: hsl(var(--background));
   }
 
   .stepio-header {
     @apply relative overflow-hidden mb-4;
-    --header-top: hsl(var(--pink));
-    --header-top-strong: hsl(var(--pink));
-    background:
-      radial-gradient(120% 140% at 50% -30%, var(--header-top-strong) 0%, transparent 62%),
-      linear-gradient(180deg, var(--header-top) 0%, hsl(var(--background)) 78%);
+    background: hsl(var(--primary));
     border-bottom-left-radius: 26px;
     border-bottom-right-radius: 26px;
   }
 
+  .stepio-header-home {
+    background: hsl(var(--background));
+  }
+
   .stepio-header-girl {
-    --header-top: hsl(345 65% 68% / 0.85);
-    --header-top-strong: hsl(345 70% 60% / 0.95);
+    --header-top: hsl(345 70% 58% / 0.9);
+    --header-top-strong: hsl(345 75% 50% / 0.98);
   }
 
   .stepio-header-boy {
-    --header-top: hsl(210 52% 50% / 0.9);
-    --header-top-strong: hsl(210 60% 42% / 0.98);
+    --header-top: hsl(210 55% 48% / 0.9);
+    --header-top-strong: hsl(210 62% 40% / 0.98);
   }
 
   .stepio-header-neutral {
@@ -227,7 +223,11 @@
   }
 
   .stepio-header-card {
-    @apply relative z-10 mx-4 mt-2 rounded-[22px] bg-white/90 px-4 py-3 shadow-sm;
+    @apply relative z-10 mx-4 mt-2 rounded-[22px] bg-primary px-4 py-3 shadow-sm text-white;
+  }
+
+  .stepio-header-card p {
+    color: hsl(0 0% 100% / 0.85);
   }
 
   .stepio-header-badge {

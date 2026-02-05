@@ -23,12 +23,12 @@ export function Home({ user, child, medications, events, plan }: HomeProps) {
         : "stepio-header-neutral";
   return (
     <div className="pb-24">
-      <header className={`stepio-header stepio-header-lg ${genderClass}`}>
-        <div className="stepio-header-content flex flex-col items-center justify-center gap-2 text-center">
+      <header className={`stepio-header stepio-header-lg stepio-header-home ${genderClass}`}>
+        <div className="stepio-header-content flex flex-col items-center justify-center gap-3 text-center">
           <img
             src={stepioLogo}
             alt="Stepio"
-            className="w-[214px] h-[214px] -mt-3 object-contain drop-shadow-[0_22px_36px_rgba(0,0,0,0.4)]"
+            className="w-[214px] h-[214px] object-contain"
           />
           <div className="flex items-center gap-2">
             <span
@@ -53,7 +53,7 @@ export function Home({ user, child, medications, events, plan }: HomeProps) {
         </div>
         <div className="stepio-header-card mt-4 text-center">
           <span className="text-sm font-semibold text-slate-900/80">
-            Onde a organização encontra o afeto.
+            Cuidado, rotina e progresso do seu filho
           </span>
         </div>
       </header>

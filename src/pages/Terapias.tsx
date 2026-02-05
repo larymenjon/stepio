@@ -80,7 +80,7 @@ export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
     <div className="pb-24">
             <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <div className="stepio-header-card text-left">
+          <div className="stepio-header-card text-center">
             <h1 className="text-2xl font-bold">Terapias e Consultas</h1>
             <p className="text-muted-foreground">Adicione e acompanhe os compromissos do seu filho</p>
           </div>
