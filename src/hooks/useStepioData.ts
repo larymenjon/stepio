@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { StepioData, User, Child, Medication, Event, Milestone } from '@/types/stepio';
-
-const STORAGE_KEY = 'stepio_data';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
+import {
+  scheduleEventNotifications,
+  cancelEventNotifications,
+  scheduleMedicationNotifications,
+  cancelMedicationNotifications,
+  rescheduleAll,
+} from '@/lib/notifications';
 
 const defaultData: StepioData = {
   user: null,
@@ -9,133 +17,287 @@ const defaultData: StepioData = {
   medications: [],
   events: [],
   milestones: [],
+  settings: {
+    notifyEvents: true,
+    notifyMeds: true,
+  },
   isOnboarded: false,
 };
 
 export function useStepioData() {
+  const { user: authUser } = useAuth();
   const [data, setData] = useState<StepioData>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error('Error loading data from localStorage:', e);
-    }
     return defaultData;
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (e) {
-      console.error('Error saving data to localStorage:', e);
-    }
-  }, [data]);
+    const load = async () => {
+      if (!authUser) {
+        setData(defaultData);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const ref = doc(db, 'users', authUser.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const loaded = snap.data() as StepioData;
+        const merged: StepioData = {
+          ...defaultData,
+          ...loaded,
+          settings: {
+            ...defaultData.settings,
+            ...(loaded.settings ?? {}),
+          },
+        };
+        setData(merged);
+        rescheduleAll(
+          merged.events,
+          merged.medications,
+          merged.settings?.notifyEvents ?? true,
+          merged.settings?.notifyMeds ?? true,
+        );
+      } else {
+        const initial: StepioData = {
+          ...defaultData,
+          user: {
+            name: authUser.displayName ?? '',
+            email: authUser.email ?? undefined,
+          } as User,
+        };
+        await setDoc(ref, initial);
+        setData(initial);
+        rescheduleAll(
+          initial.events,
+          initial.medications,
+          initial.settings?.notifyEvents ?? true,
+          initial.settings?.notifyMeds ?? true,
+        );
+      }
+      setLoading(false);
+    };
+    load();
+  }, [authUser]);
 
-  const setUser = useCallback((user: User) => {
-    setData((prev) => ({ ...prev, user }));
-  }, []);
+  const persist = useCallback(
+    async (next: StepioData) => {
+      if (!authUser) return;
+      const ref = doc(db, 'users', authUser.uid);
+      await setDoc(ref, next, { merge: true });
+    },
+    [authUser],
+  );
 
-  const setChild = useCallback((child: Child) => {
-    setData((prev) => ({ ...prev, child }));
-  }, []);
+  const setUser = useCallback(
+    (user: User) => {
+      setData((prev) => {
+        const next = { ...prev, user };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
+  const setChild = useCallback(
+    (child: Child) => {
+      setData((prev) => {
+        const next = { ...prev, child };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
 
   const completeOnboarding = useCallback(() => {
-    setData((prev) => ({ ...prev, isOnboarded: true }));
-  }, []);
+    setData((prev) => {
+      const next = { ...prev, isOnboarded: true };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
 
   const addMedication = useCallback((medication: Omit<Medication, 'id'>) => {
     const newMed: Medication = {
       ...medication,
       id: crypto.randomUUID(),
     };
-    setData((prev) => ({
-      ...prev,
-      medications: [...prev.medications, newMed],
-    }));
-  }, []);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        medications: [...prev.medications, newMed],
+      };
+      persist(next);
+      if (next.settings?.notifyMeds) {
+        scheduleMedicationNotifications(newMed);
+      }
+      return next;
+    });
+  }, [persist]);
 
   const updateMedication = useCallback((id: string, medication: Partial<Medication>) => {
-    setData((prev) => ({
-      ...prev,
-      medications: prev.medications.map((m) =>
-        m.id === id ? { ...m, ...medication } : m
-      ),
-    }));
-  }, []);
+    setData((prev) => {
+      const existing = prev.medications.find((m) => m.id === id);
+      const next = {
+        ...prev,
+        medications: prev.medications.map((m) =>
+          m.id === id ? { ...m, ...medication } : m
+        ),
+      };
+      persist(next);
+      const updated = next.medications.find((m) => m.id === id);
+      if (existing) {
+        cancelMedicationNotifications(existing);
+      }
+      if (updated && next.settings?.notifyMeds) {
+        scheduleMedicationNotifications(updated);
+      }
+      return next;
+    });
+  }, [persist]);
 
   const deleteMedication = useCallback((id: string) => {
-    setData((prev) => ({
-      ...prev,
-      medications: prev.medications.filter((m) => m.id !== id),
-    }));
-  }, []);
+    setData((prev) => {
+      const existing = prev.medications.find((m) => m.id === id);
+      const next = {
+        ...prev,
+        medications: prev.medications.filter((m) => m.id !== id),
+      };
+      persist(next);
+      if (existing) {
+        cancelMedicationNotifications(existing);
+      }
+      return next;
+    });
+  }, [persist]);
 
   const addEvent = useCallback((event: Omit<Event, 'id'>) => {
     const newEvent: Event = {
       ...event,
       id: crypto.randomUUID(),
     };
-    setData((prev) => ({
-      ...prev,
-      events: [...prev.events, newEvent],
-    }));
-  }, []);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        events: [...prev.events, newEvent],
+      };
+      persist(next);
+      if (next.settings?.notifyEvents) {
+        scheduleEventNotifications(newEvent);
+      }
+      return next;
+    });
+  }, [persist]);
 
   const updateEvent = useCallback((id: string, event: Partial<Event>) => {
-    setData((prev) => ({
-      ...prev,
-      events: prev.events.map((e) =>
-        e.id === id ? { ...e, ...event } : e
-      ),
-    }));
-  }, []);
+    setData((prev) => {
+      const existing = prev.events.find((e) => e.id === id);
+      const next = {
+        ...prev,
+        events: prev.events.map((e) =>
+          e.id === id ? { ...e, ...event } : e
+        ),
+      };
+      persist(next);
+      const updated = next.events.find((e) => e.id === id);
+      if (existing) {
+        cancelEventNotifications(existing);
+      }
+      if (updated && next.settings?.notifyEvents) {
+        scheduleEventNotifications(updated);
+      }
+      return next;
+    });
+  }, [persist]);
 
   const deleteEvent = useCallback((id: string) => {
-    setData((prev) => ({
-      ...prev,
-      events: prev.events.filter((e) => e.id !== id),
-    }));
-  }, []);
+    setData((prev) => {
+      const existing = prev.events.find((e) => e.id === id);
+      const next = {
+        ...prev,
+        events: prev.events.filter((e) => e.id !== id),
+      };
+      persist(next);
+      if (existing) {
+        cancelEventNotifications(existing);
+      }
+      return next;
+    });
+  }, [persist]);
+
+  const setNotificationSettings = useCallback(
+    (settings: { notifyEvents: boolean; notifyMeds: boolean }) => {
+      setData((prev) => {
+        const next = {
+          ...prev,
+          settings,
+        };
+        persist(next);
+        rescheduleAll(
+          next.events,
+          next.medications,
+          settings.notifyEvents,
+          settings.notifyMeds,
+        );
+        return next;
+      });
+    },
+    [persist],
+  );
 
   const addMilestone = useCallback((milestone: Omit<Milestone, 'id'>) => {
     const newMilestone: Milestone = {
       ...milestone,
       id: crypto.randomUUID(),
     };
-    setData((prev) => ({
-      ...prev,
-      milestones: [...prev.milestones, newMilestone],
-    }));
-  }, []);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        milestones: [...prev.milestones, newMilestone],
+      };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
 
   const updateMilestone = useCallback((id: string, milestone: Partial<Milestone>) => {
-    setData((prev) => ({
-      ...prev,
-      milestones: prev.milestones.map((m) =>
-        m.id === id ? { ...m, ...milestone } : m
-      ),
-    }));
-  }, []);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        milestones: prev.milestones.map((m) =>
+          m.id === id ? { ...m, ...milestone } : m
+        ),
+      };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
 
   const deleteMilestone = useCallback((id: string) => {
-    setData((prev) => ({
-      ...prev,
-      milestones: prev.milestones.filter((m) => m.id !== id),
-    }));
-  }, []);
+    setData((prev) => {
+      const next = {
+        ...prev,
+        milestones: prev.milestones.filter((m) => m.id !== id),
+      };
+      persist(next);
+      return next;
+    });
+  }, [persist]);
 
   const resetData = useCallback(() => {
     setData(defaultData);
-    localStorage.removeItem(STORAGE_KEY);
-  }, []);
+    persist(defaultData);
+  }, [persist]);
 
   return {
     data,
+    loading,
     setUser,
     setChild,
     completeOnboarding,
+    setNotificationSettings,
     addMedication,
     updateMedication,
     deleteMedication,

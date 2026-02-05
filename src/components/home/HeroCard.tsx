@@ -17,16 +17,13 @@ function getGreeting(): string {
 export function HeroCard({ user, child }: HeroCardProps) {
   const age = calculateAge(child.birthDate);
   const greeting = getGreeting();
+  const initials = `${user.name?.trim().charAt(0) ?? ''}${child.name?.trim().charAt(0) ?? ''}`.toUpperCase();
 
   return (
     <div className="stepio-hero-gradient rounded-3xl p-5 text-primary-foreground animate-slide-up">
       <div className="flex items-start gap-4 mb-4">
         <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl overflow-hidden">
-          {child.photo ? (
-            <img src={child.photo} alt={child.name} className="w-full h-full object-cover" />
-          ) : (
-            '👶'
-          )}
+          <span className="font-bold">{initials || "LC"}</span>
         </div>
         <div className="flex-1">
           <p className="text-white/80 text-sm font-medium">{greeting},</p>

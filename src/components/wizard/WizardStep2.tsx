@@ -4,7 +4,7 @@ import { format, parse, isValid as isValidDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface WizardStep2Props {
-  onNext: (childName: string, birthDate: string) => void;
+  onNext: (childName: string, birthDate: string, gender: 'menina' | 'menino' | 'nao_informar') => void;
   onBack: () => void;
 }
 
@@ -12,6 +12,7 @@ export function WizardStep2({ onNext, onBack }: WizardStep2Props) {
   const [childName, setChildName] = useState('');
   const [birthDateInput, setBirthDateInput] = useState('');
   const [birthDate, setBirthDate] = useState<Date | null>(null);
+  const [gender, setGender] = useState<'menina' | 'menino' | 'nao_informar'>('nao_informar');
 
   const handleDateChange = (value: string) => {
     // Format: DD/MM/YYYY
@@ -39,7 +40,7 @@ export function WizardStep2({ onNext, onBack }: WizardStep2Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (childName.trim() && birthDate) {
-      onNext(childName.trim(), birthDate.toISOString());
+      onNext(childName.trim(), birthDate.toISOString(), gender);
     }
   };
 
@@ -98,6 +99,32 @@ export function WizardStep2({ onNext, onBack }: WizardStep2Props) {
               ✓ {format(birthDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </p>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-2">
+            Gênero
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                { id: 'menina', label: 'Menina' },
+                { id: 'menino', label: 'Menino' },
+                { id: 'nao_informar', label: 'Prefiro não dizer' },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setGender(option.id)}
+                className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                  gender === option.id ? 'border-primary bg-primary/5' : 'border-border'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2">

@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -115,10 +115,16 @@
 
   body {
     @apply bg-background text-foreground font-nunito antialiased;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   html {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body, #root {
+    height: 100%;
   }
 }
 
@@ -156,7 +162,11 @@
   }
 
   .stepio-bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-border px-2 py-2 flex justify-around items-center z-50;
+    @apply fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-border px-2 py-2 z-50;
+  }
+
+  .stepio-bottom-nav-inner {
+    @apply w-full flex justify-around items-center;
   }
 
   .stepio-nav-item {
@@ -168,7 +178,104 @@
   }
 
   .mobile-container {
-    @apply max-w-md mx-auto min-h-screen relative;
+    @apply max-w-md mx-auto min-h-screen relative pt-2;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--pink) / 0.22) 0%,
+      hsl(var(--background)) 140px
+    );
+  }
+
+  .stepio-header {
+    @apply relative overflow-hidden rounded-b-[32px] mb-4;
+    background:
+      radial-gradient(120% 140% at 50% -30%, hsl(var(--pink) / 0.75) 0%, transparent 62%),
+      linear-gradient(180deg, hsl(var(--pink) / 0.85) 0%, hsl(var(--pink) / 0.25) 70%, transparent 100%);
+    box-shadow: 0 16px 30px -18px hsl(var(--slate-blue) / 0.35);
+  }
+
+  .stepio-header-girl {
+    background:
+      radial-gradient(120% 140% at 50% -30%, hsl(var(--pink) / 0.8) 0%, transparent 62%),
+      linear-gradient(180deg, hsl(var(--pink) / 0.9) 0%, hsl(var(--pink) / 0.3) 70%, transparent 100%);
+  }
+
+  .stepio-header-boy {
+    background:
+      radial-gradient(120% 140% at 50% -30%, hsl(var(--slate-blue) / 0.85) 0%, transparent 62%),
+      linear-gradient(180deg, hsl(var(--slate-blue) / 0.9) 0%, hsl(var(--slate-blue) / 0.3) 70%, transparent 100%);
+  }
+
+  .stepio-header-neutral {
+    background:
+      radial-gradient(120% 140% at 50% -30%, hsl(var(--pink) / 0.75) 0%, transparent 62%),
+      linear-gradient(180deg, hsl(var(--pink) / 0.85) 0%, hsl(var(--pink) / 0.25) 70%, transparent 100%);
+  }
+
+  .stepio-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg,
+        hsl(var(--pink) / 0.7) 0%,
+        hsl(var(--cream) / 0.6) 25%,
+        hsl(var(--primary) / 0.5) 50%,
+        hsl(var(--slate-blue) / 0.5) 75%,
+        hsl(var(--pink) / 0.7) 100%);
+    background-size: 200% 100%;
+    opacity: 0.2;
+    animation: stepioHeaderFlow 18s ease-in-out infinite;
+  }
+
+  .stepio-header::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 64px;
+    background: hsl(var(--background));
+    border-top-left-radius: 100% 140%;
+    border-top-right-radius: 100% 140%;
+    transform: scaleX(1.45);
+    box-shadow: 0 -8px 18px -14px hsl(var(--slate-blue) / 0.35);
+  }
+
+  .stepio-header-wave {
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: 34px;
+    height: 42px;
+    background: hsl(var(--background));
+    border-top-left-radius: 100% 120%;
+    border-top-right-radius: 100% 120%;
+    opacity: 0.6;
+    filter: blur(0.2px);
+  }
+
+  .stepio-header-content {
+    @apply relative z-10;
+  }
+
+  .stepio-header-lg {
+    @apply pt-8 pb-8 px-4;
+    min-height: 170px;
+  }
+
+  .stepio-header-sm {
+    @apply pt-4 pb-3 px-4;
+    min-height: 72px;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 z-50 flex items-end justify-center overflow-y-auto px-3 pt-16 pb-6;
+  }
+
+  .modal-sheet {
+    @apply bg-background w-full max-w-md rounded-t-3xl p-6 animate-slide-up max-h-[85vh] overflow-y-auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -247,5 +354,11 @@
   @keyframes bounceGentle {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
+  }
+
+  @keyframes stepioHeaderFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 }

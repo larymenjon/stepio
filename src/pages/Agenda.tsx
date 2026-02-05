@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Plus, Brain, Stethoscope, GraduationCap, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Event, eventTypeLabels } from '@/types/stepio';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, addMonths, subMonths } from 'date-fns';
@@ -56,7 +57,7 @@ export function Agenda({ events, onAdd, onDelete }: AgendaProps) {
   const hasEventsOnDay = (date: Date) =>
     events.some((event) => isSameDay(parseISO(event.datetime), date));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (formData.title) {
       const datetime = `${formData.date}T${formData.time}:00`;
@@ -80,9 +81,11 @@ export function Agenda({ events, onAdd, onDelete }: AgendaProps) {
   return (
     <div className="pb-24">
       {/* Header */}
-      <header className="p-4">
-        <h1 className="text-2xl font-bold">Agenda 📅</h1>
-        <p className="text-muted-foreground">Compromissos e terapias</p>
+      <header className="stepio-header stepio-header-sm">
+        <div className="stepio-header-content">
+          <h1 className="text-2xl font-bold">Agenda 📅</h1>
+          <p className="text-muted-foreground">Compromissos e terapias</p>
+        </div>
       </header>
 
       <main className="px-4 space-y-4">
@@ -195,8 +198,8 @@ export function Agenda({ events, onAdd, onDelete }: AgendaProps) {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="bg-background w-full max-w-md rounded-t-3xl p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
+        <div className="modal-overlay">
+          <div className="modal-sheet">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Novo Evento</h2>
               <button
@@ -293,3 +296,4 @@ export function Agenda({ events, onAdd, onDelete }: AgendaProps) {
     </div>
   );
 }
+

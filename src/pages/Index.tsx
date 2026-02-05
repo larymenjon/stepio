@@ -3,7 +3,7 @@ import { OnboardingWizard } from '@/components/wizard/OnboardingWizard';
 import { Home } from './Home';
 import { Medicacao } from './Medicacao';
 import { Agenda } from './Agenda';
-import { Marcos } from './Marcos';
+import { Terapias } from './Terapias';
 import { BottomNav } from '@/components/BottomNav';
 import { useLocation } from 'react-router-dom';
 import { ConditionType } from '@/types/stepio';
@@ -12,6 +12,7 @@ const Index = () => {
   const location = useLocation();
   const {
     data,
+    loading,
     setUser,
     setChild,
     completeOnboarding,
@@ -19,14 +20,13 @@ const Index = () => {
     deleteMedication,
     addEvent,
     deleteEvent,
-    addMilestone,
-    deleteMilestone,
   } = useStepioData();
 
   const handleOnboardingComplete = (onboardingData: {
     userName: string;
     childName: string;
     birthDate: string;
+    gender: 'menina' | 'menino' | 'nao_informar';
     conditions: ConditionType[];
   }) => {
     setUser({ name: onboardingData.userName });
@@ -34,11 +34,20 @@ const Index = () => {
       name: onboardingData.childName,
       birthDate: onboardingData.birthDate,
       condition: onboardingData.conditions,
+      gender: onboardingData.gender,
     });
     completeOnboarding();
   };
 
   // Show onboarding wizard if not completed
+  if (loading) {
+    return (
+      <div className="mobile-container flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">Carregando...</div>
+      </div>
+    );
+  }
+
   if (!data.isOnboarded || !data.user || !data.child) {
     return (
       <div className="mobile-container">
@@ -68,10 +77,18 @@ const Index = () => {
         );
       case '/marcos':
         return (
-          <Marcos
-            milestones={data.milestones}
-            onAdd={addMilestone}
-            onDelete={deleteMilestone}
+          <Terapias
+            events={data.events}
+            onAdd={addEvent}
+            onDelete={deleteEvent}
+          />
+        );
+      case '/terapias':
+        return (
+          <Terapias
+            events={data.events}
+            onAdd={addEvent}
+            onDelete={deleteEvent}
           />
         );
       default:

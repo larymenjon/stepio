@@ -1,9 +1,17 @@
-import { User, Child, Medication, Event } from '@/types/stepio';
-import { HeroCard } from '@/components/home/HeroCard';
-import { MedicationStatus } from '@/components/home/MedicationStatus';
-import { WeekAgenda } from '@/components/home/WeekAgenda';
-import { MotivationalFooter } from '@/components/home/MotivationalFooter';
-import stepioLogo from '@/assets/stepio-logo.png';
+import { User, Child, Medication, Event } from "@/types/stepio";
+import { HeroCard } from "@/components/home/HeroCard";
+import { MedicationStatus } from "@/components/home/MedicationStatus";
+import { WeekAgenda } from "@/components/home/WeekAgenda";
+import { MotivationalFooter } from "@/components/home/MotivationalFooter";
+import stepioLogo from "@/assets/stepio-logo-3d.png";
+
+const avatarMap: Record<string, string> = {
+  "avatar:girl": "👧",
+  "avatar:boy": "👦",
+  "avatar:pet": "🐶",
+};
+
+const getAvatarEmoji = (value?: string) => avatarMap[value ?? ""] ?? "👩";
 
 interface HomeProps {
   user: User;
@@ -13,24 +21,29 @@ interface HomeProps {
 }
 
 export function Home({ user, child, medications, events }: HomeProps) {
+  const genderClass =
+    child.gender === "menina"
+      ? "stepio-header-girl"
+      : child.gender === "menino"
+        ? "stepio-header-boy"
+        : "stepio-header-neutral";
   return (
     <div className="pb-24">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          <img src={stepioLogo} alt="Stepio" className="w-10 h-10 object-contain" />
-          <span className="text-xl font-bold text-primary">Stepio</span>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-          {user.photo ? (
-            <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-lg">👩</span>
-          )}
+      <header className={`stepio-header stepio-header-lg ${genderClass}`}>
+        <div className="stepio-header-wave" />
+        <div className="stepio-header-content flex flex-col items-center justify-center gap-3 text-center">
+          <img
+            src={stepioLogo}
+            alt="Stepio"
+            className="w-24 h-24 object-contain drop-shadow-[0_10px_18px_rgba(0,0,0,0.18)]"
+          />
+          <span className="text-2xl font-bold text-primary">Stepio</span>
+          <span className="mt-7 text-sm font-semibold text-slate-900/80">
+            Cuidado, rotina e progresso do seu filho
+          </span>
         </div>
       </header>
 
-      {/* Content */}
       <main className="px-4 space-y-4">
         <HeroCard user={user} child={child} />
         <MedicationStatus medications={medications} />

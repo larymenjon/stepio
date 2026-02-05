@@ -10,6 +10,7 @@ interface OnboardingWizardProps {
     userName: string;
     childName: string;
     birthDate: string;
+    gender: 'menina' | 'menino' | 'nao_informar';
     conditions: ConditionType[];
   }) => void;
 }
@@ -19,15 +20,17 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [userName, setUserName] = useState('');
   const [childName, setChildName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [gender, setGender] = useState<'menina' | 'menino' | 'nao_informar'>('nao_informar');
 
   const handleStep1 = (name: string) => {
     setUserName(name);
     setStep(2);
   };
 
-  const handleStep2 = (name: string, date: string) => {
+  const handleStep2 = (name: string, date: string, selectedGender: 'menina' | 'menino' | 'nao_informar') => {
     setChildName(name);
     setBirthDate(date);
+    setGender(selectedGender);
     setStep(3);
   };
 
@@ -36,6 +39,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
       userName,
       childName,
       birthDate,
+      gender,
       conditions,
     });
   };

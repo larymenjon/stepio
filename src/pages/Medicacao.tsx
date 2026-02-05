@@ -32,6 +32,7 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
     dosage: '',
     frequency: 'diario' as Medication['frequency'],
     startTime: '08:00',
+    extraTimes: [] as string[],
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -44,6 +45,7 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
         dosage: '',
         frequency: 'diario',
         startTime: '08:00',
+        extraTimes: [],
       });
       setShowForm(false);
     }
@@ -52,9 +54,11 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
   return (
     <div className="pb-24">
       {/* Header */}
-      <header className="p-4">
-        <h1 className="text-2xl font-bold">Medicações 💊</h1>
-        <p className="text-muted-foreground">Gerencie os remédios do seu pequeno</p>
+      <header className="stepio-header stepio-header-sm">
+        <div className="stepio-header-content">
+          <h1 className="text-2xl font-bold">Medicações 💊</h1>
+          <p className="text-muted-foreground">Gerencie os remédios do seu pequeno</p>
+        </div>
       </header>
 
       {/* List */}
@@ -112,8 +116,8 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="bg-background w-full max-w-md rounded-t-3xl p-6 animate-slide-up">
+        <div className="modal-overlay">
+          <div className="modal-sheet">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">Nova Medicação</h2>
               <button
@@ -175,7 +179,7 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
               <div>
                 <label className="block text-sm font-semibold mb-2">Frequência</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(['diario', '12h', '8h', 'sob_demanda'] as const).map((freq) => (
+                  {(['diario', '6h', '8h', '12h', 'sob_demanda'] as const).map((freq) => (
                     <button
                       key={freq}
                       type="button"
@@ -201,6 +205,43 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
                   onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                   className="stepio-input w-full"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Horários adicionais</label>
+                <div className="space-y-2">
+                  {formData.extraTimes.map((time, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => {
+                          const next = [...formData.extraTimes];
+                          next[index] = e.target.value;
+                          setFormData({ ...formData, extraTimes: next });
+                        }}
+                        className="stepio-input w-full"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = formData.extraTimes.filter((_, i) => i !== index);
+                          setFormData({ ...formData, extraTimes: next });
+                        }}
+                        className="px-3 py-2 rounded-xl border border-border text-sm"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, extraTimes: [...formData.extraTimes, '12:00'] })}
+                    className="w-full py-2 rounded-xl border-2 border-dashed border-border text-sm font-semibold text-primary"
+                  >
+                    + Adicionar horário
+                  </button>
+                </div>
               </div>
 
               <button

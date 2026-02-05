@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Puzzle, Check } from 'lucide-react';
-import { ConditionType, conditionLabels } from '@/types/stepio';
+import { useMemo, useState } from 'react';
+import { Puzzle, Check, ChevronDown, Plus } from 'lucide-react';
+import { ConditionType, conditionLabels, conditionOptions } from '@/types/stepio';
 import { cn } from '@/lib/utils';
 
 interface WizardStep3Props {
@@ -9,10 +9,11 @@ interface WizardStep3Props {
   onBack: () => void;
 }
 
-const conditions: ConditionType[] = ['TEA', 'T21', 'PC', 'TDAH', 'Outro'];
-
 export function WizardStep3({ childName, onComplete, onBack }: WizardStep3Props) {
   const [selected, setSelected] = useState<ConditionType[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [customOptions, setCustomOptions] = useState<string[]>([]);
+  const [customInput, setCustomInput] = useState('');
 
   const toggleCondition = (condition: ConditionType) => {
     setSelected((prev) =>
@@ -20,6 +21,24 @@ export function WizardStep3({ childName, onComplete, onBack }: WizardStep3Props)
         ? prev.filter((c) => c !== condition)
         : [...prev, condition]
     );
+  };
+
+  const options = useMemo(() => {
+    const mapped = conditionOptions.map((opt) => ({ id: opt.id, label: opt.label }));
+    const extra = customOptions.map((opt) => ({ id: opt, label: opt }));
+    return [...mapped, ...extra];
+  }, [customOptions]);
+
+  const addCustom = () => {
+    const value = customInput.trim();
+    if (!value) return;
+    if (!customOptions.includes(value)) {
+      setCustomOptions((prev) => [...prev, value]);
+    }
+    if (!selected.includes(value)) {
+      setSelected((prev) => [...prev, value]);
+    }
+    setCustomInput('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,25 +62,71 @@ export function WizardStep3({ childName, onComplete, onBack }: WizardStep3Props)
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex flex-wrap gap-3 justify-center">
-          {conditions.map((condition) => {
-            const isSelected = selected.includes(condition);
-            return (
-              <button
-                key={condition}
-                type="button"
-                onClick={() => toggleCondition(condition)}
-                className={cn(
-                  'stepio-chip',
-                  isSelected && 'stepio-chip-selected'
-                )}
-              >
-                {isSelected && <Check size={16} />}
-                {conditionLabels[condition]}
-              </button>
-            );
-          })}
+        <div className="stepio-card">
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between py-3 font-semibold"
+          >
+            <span>Selecionar condições</span>
+            <ChevronDown size={18} className={cn('transition-transform', isOpen && 'rotate-180')} />
+          </button>
+
+          {isOpen && (
+            <div className="mt-3 space-y-3">
+              <div className="grid gap-2">
+                {options.map((option) => {
+                  const isSelected = selected.includes(option.id);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleCondition(option.id)}
+                      className={cn(
+                        'w-full flex items-center justify-between rounded-2xl border-2 px-4 py-3 text-left',
+                        isSelected ? 'border-primary bg-primary/5' : 'border-border'
+                      )}
+                    >
+                      <span className="text-sm font-medium">{option.label}</span>
+                      {isSelected && <Check size={16} className="text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">Adicionar outra condição</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    placeholder="Ex: Paralisia cerebral infantil"
+                    className="stepio-input w-full"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustom}
+                    className="px-4 rounded-2xl bg-primary text-primary-foreground"
+                    aria-label="Adicionar condição"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {selected.length > 0 && (
+          <div className="flex flex-wrap gap-2 justify-center">
+            {selected.map((condition) => (
+              <span key={condition} className="stepio-chip stepio-chip-selected">
+                {conditionLabels[condition] ?? condition}
+              </span>
+            ))}
+          </div>
+        )}
 
         <p className="text-sm text-muted-foreground text-center">
           Você pode pular esta etapa se preferir

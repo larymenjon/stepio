@@ -1,5 +1,5 @@
 import { Medication } from '@/types/stepio';
-import { parse, addHours, isAfter, isBefore, format, startOfDay, setHours, setMinutes } from 'date-fns';
+import { addDays, addHours, isAfter, isBefore, format, startOfDay, setHours, setMinutes } from 'date-fns';
 
 export interface NextMedication {
   medication: Medication;
@@ -12,8 +12,26 @@ export function getNextMedicationTime(medication: Medication, referenceDate: Dat
   const today = startOfDay(referenceDate);
   let nextTime = setMinutes(setHours(today, hours), minutes);
 
+  // Use explicit times when provided
+  if (medication.extraTimes && medication.extraTimes.length > 0) {
+    const timeList = [medication.startTime, ...medication.extraTimes]
+      .map((t) => t.split(':').map(Number))
+      .map(([h, m]) => setMinutes(setHours(today, h), m))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const next = timeList.find((time) => isAfter(time, referenceDate));
+    return next ?? addDays(timeList[0], 1);
+  }
+
   // Calculate interval based on frequency
-  const intervalHours = medication.frequency === '8h' ? 8 : medication.frequency === '12h' ? 12 : 24;
+  const intervalHours =
+    medication.frequency === '6h'
+      ? 6
+      : medication.frequency === '8h'
+        ? 8
+        : medication.frequency === '12h'
+          ? 12
+          : 24;
 
   // Find the next occurrence
   while (isBefore(nextTime, referenceDate)) {
@@ -53,17 +71,39 @@ export function formatMedicationTime(date: Date): string {
 export function getMedicationSchedule(medication: Medication): string[] {
   const [hours, minutes] = medication.startTime.split(':').map(Number);
   const times: string[] = [];
-  
+
+  if (medication.extraTimes && medication.extraTimes.length > 0) {
+    const allTimes = [medication.startTime, ...medication.extraTimes]
+      .filter(Boolean)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    return Array.from(new Set(allTimes)).sort();
+  }
+
   let currentHour = hours;
-  const intervalHours = medication.frequency === '8h' ? 8 : medication.frequency === '12h' ? 12 : 24;
-  
-  const count = medication.frequency === '8h' ? 3 : medication.frequency === '12h' ? 2 : 1;
-  
+  const intervalHours =
+    medication.frequency === '6h'
+      ? 6
+      : medication.frequency === '8h'
+        ? 8
+        : medication.frequency === '12h'
+          ? 12
+          : 24;
+
+  const count =
+    medication.frequency === '6h'
+      ? 4
+      : medication.frequency === '8h'
+        ? 3
+        : medication.frequency === '12h'
+          ? 2
+          : 1;
+
   for (let i = 0; i < count; i++) {
     const h = currentHour % 24;
     times.push(`${h.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
     currentHour += intervalHours;
   }
-  
+
   return times.sort();
 }

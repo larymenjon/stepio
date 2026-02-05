@@ -1,5 +1,6 @@
 export interface User {
   name: string;
+  email?: string;
   photo?: string;
 }
 
@@ -8,17 +9,19 @@ export interface Child {
   birthDate: string; // ISO date string
   condition: ConditionType[];
   photo?: string;
+  gender?: 'menina' | 'menino' | 'nao_informar';
 }
 
-export type ConditionType = 'TEA' | 'T21' | 'PC' | 'TDAH' | 'Outro';
+export type ConditionType = string;
 
 export interface Medication {
   id: string;
   name: string;
   type: 'xarope' | 'comprimido' | 'gotas' | 'pomada';
   dosage: string;
-  frequency: 'diario' | '8h' | '12h' | 'sob_demanda';
+  frequency: 'diario' | '6h' | '8h' | '12h' | 'sob_demanda';
   startTime: string; // HH:mm format
+  extraTimes?: string[]; // HH:mm format
   notes?: string;
 }
 
@@ -45,16 +48,42 @@ export interface StepioData {
   medications: Medication[];
   events: Event[];
   milestones: Milestone[];
+  settings?: {
+    notifyEvents: boolean;
+    notifyMeds: boolean;
+  };
   isOnboarded: boolean;
 }
 
-export const conditionLabels: Record<ConditionType, string> = {
+export const conditionLabels: Record<string, string> = {
   TEA: 'Autismo (TEA)',
   T21: 'Síndrome de Down (T21)',
   PC: 'Paralisia Cerebral',
   TDAH: 'TDAH',
-  Outro: 'Outro',
+  Epilepsia: 'Epilepsia',
+  Rett: 'Síndrome de Rett',
+  West: 'Síndrome de West',
+  Microcefalia: 'Microcefalia',
+  AGD: 'Atraso Global do Desenvolvimento',
+  TGD: 'Transtorno Global do Desenvolvimento',
+  Distonia: 'Distonia',
+  Encefalopatia: 'Encefalopatia',
 };
+
+export const conditionOptions: { id: string; label: string }[] = [
+  { id: 'TEA', label: conditionLabels.TEA },
+  { id: 'T21', label: conditionLabels.T21 },
+  { id: 'PC', label: conditionLabels.PC },
+  { id: 'TDAH', label: conditionLabels.TDAH },
+  { id: 'Epilepsia', label: conditionLabels.Epilepsia },
+  { id: 'Rett', label: conditionLabels.Rett },
+  { id: 'West', label: conditionLabels.West },
+  { id: 'Microcefalia', label: conditionLabels.Microcefalia },
+  { id: 'AGD', label: conditionLabels.AGD },
+  { id: 'TGD', label: conditionLabels.TGD },
+  { id: 'Distonia', label: conditionLabels.Distonia },
+  { id: 'Encefalopatia', label: conditionLabels.Encefalopatia },
+];
 
 export const medicationTypeLabels: Record<Medication['type'], string> = {
   xarope: 'Xarope',
@@ -65,6 +94,7 @@ export const medicationTypeLabels: Record<Medication['type'], string> = {
 
 export const frequencyLabels: Record<Medication['frequency'], string> = {
   diario: '1x ao dia',
+  '6h': 'A cada 6 horas',
   '8h': 'A cada 8 horas',
   '12h': 'A cada 12 horas',
   sob_demanda: 'Sob demanda',
