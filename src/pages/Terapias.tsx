@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Brain, Stethoscope, X } from "lucide-react";
 import { Event, eventTypeLabels } from "@/types/stepio";
-import { format, parseISO, isAfter } from "date-fns";
+import { format, parseISO, isAfter, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useStepioData } from "@/hooks/useStepioData";
+import { useNavigate } from "react-router-dom";
 
 interface TerapiasProps {
   events: Event[];
@@ -24,6 +26,8 @@ const eventColors = {
 const allowedTypes: Event["type"][] = ["therapy", "doctor"];
 
 export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
+  const { data } = useStepioData();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -36,6 +40,17 @@ export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
   const sortedEvents = [...events]
     .filter((event) => allowedTypes.includes(event.type))
     .sort((a, b) => parseISO(a.datetime).getTime() - parseISO(b.datetime).getTime());
+
+  const currentMonthCount = useMemo(() => {
+    const start = startOfMonth(new Date());
+    const end = endOfMonth(new Date());
+    return sortedEvents.filter((event) =>
+      isWithinInterval(parseISO(event.datetime), { start, end })
+    ).length;
+  }, [sortedEvents]);
+
+  const isPro = data.plan?.tier === "pro" && data.plan?.status === "active";
+  const limitReached = !isPro && currentMonthCount >= 5;
 
   const upcoming = sortedEvents.filter((event) => isAfter(parseISO(event.datetime), new Date()));
   const past = sortedEvents.filter((event) => !isAfter(parseISO(event.datetime), new Date()));
@@ -63,10 +78,12 @@ export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
 
   return (
     <div className="pb-24">
-      <header className="stepio-header stepio-header-sm">
+            <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <h1 className="text-2xl font-bold">Terapias e Consultas</h1>
-          <p className="text-muted-foreground">Adicione e acompanhe os compromissos do seu filho</p>
+          <div className="stepio-header-card text-left">
+            <h1 className="text-2xl font-bold">Terapias e Consultas</h1>
+            <p className="text-muted-foreground">Adicione e acompanhe os compromissos do seu filho</p>
+          </div>
         </div>
       </header>
 
@@ -150,7 +167,16 @@ export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
         )}
       </main>
 
-      <button onClick={() => setShowForm(true)} className="stepio-fab">
+      <button
+        onClick={() => {
+          if (limitReached) {
+            navigate("/planos");
+          } else {
+            setShowForm(true);
+          }
+        }}
+        className="stepio-fab"
+      >
         <Plus size={28} />
       </button>
 
@@ -168,6 +194,11 @@ export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {!isPro && (
+                <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
+                  Plano Free: até 5 terapias por mês. Para liberar ilimitado, assine o Pro.
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold mb-2">Tipo</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -248,3 +279,4 @@ export function Terapias({ events, onAdd, onDelete }: TerapiasProps) {
     </div>
   );
 }
+

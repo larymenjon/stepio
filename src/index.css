@@ -128,6 +128,7 @@
   }
 }
 
+
 @layer components {
   .stepio-card {
     @apply bg-card rounded-3xl p-5 shadow-stepio transition-all duration-300;
@@ -187,86 +188,64 @@
   }
 
   .stepio-header {
-    @apply relative overflow-hidden rounded-b-[32px] mb-4;
+    @apply relative overflow-hidden mb-4;
+    --header-top: hsl(var(--pink));
+    --header-top-strong: hsl(var(--pink));
     background:
-      radial-gradient(120% 140% at 50% -30%, hsl(var(--pink) / 0.75) 0%, transparent 62%),
-      linear-gradient(180deg, hsl(var(--pink) / 0.85) 0%, hsl(var(--pink) / 0.25) 70%, transparent 100%);
-    box-shadow: 0 16px 30px -18px hsl(var(--slate-blue) / 0.35);
+      radial-gradient(120% 140% at 50% -30%, var(--header-top-strong) 0%, transparent 62%),
+      linear-gradient(180deg, var(--header-top) 0%, hsl(var(--background)) 78%);
+    border-bottom-left-radius: 26px;
+    border-bottom-right-radius: 26px;
   }
 
   .stepio-header-girl {
-    background:
-      radial-gradient(120% 140% at 50% -30%, hsl(var(--pink) / 0.8) 0%, transparent 62%),
-      linear-gradient(180deg, hsl(var(--pink) / 0.9) 0%, hsl(var(--pink) / 0.3) 70%, transparent 100%);
+    --header-top: hsl(345 65% 68% / 0.85);
+    --header-top-strong: hsl(345 70% 60% / 0.95);
   }
 
   .stepio-header-boy {
-    background:
-      radial-gradient(120% 140% at 50% -30%, hsl(var(--slate-blue) / 0.85) 0%, transparent 62%),
-      linear-gradient(180deg, hsl(var(--slate-blue) / 0.9) 0%, hsl(var(--slate-blue) / 0.3) 70%, transparent 100%);
+    --header-top: hsl(210 52% 50% / 0.9);
+    --header-top-strong: hsl(210 60% 42% / 0.98);
   }
 
   .stepio-header-neutral {
-    background:
-      radial-gradient(120% 140% at 50% -30%, hsl(var(--pink) / 0.75) 0%, transparent 62%),
-      linear-gradient(180deg, hsl(var(--pink) / 0.85) 0%, hsl(var(--pink) / 0.25) 70%, transparent 100%);
-  }
-
-  .stepio-header::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(90deg,
-        hsl(var(--pink) / 0.7) 0%,
-        hsl(var(--cream) / 0.6) 25%,
-        hsl(var(--primary) / 0.5) 50%,
-        hsl(var(--slate-blue) / 0.5) 75%,
-        hsl(var(--pink) / 0.7) 100%);
-    background-size: 200% 100%;
-    opacity: 0.2;
-    animation: stepioHeaderFlow 18s ease-in-out infinite;
+    --header-top: hsl(168 45% 62% / 0.8);
+    --header-top-strong: hsl(168 50% 54% / 0.95);
   }
 
   .stepio-header::after {
     content: "";
     position: absolute;
-    left: 0;
-    right: 0;
+    left: -8%;
+    right: -8%;
     bottom: -1px;
-    height: 64px;
+    height: 58px;
     background: hsl(var(--background));
     border-top-left-radius: 100% 140%;
     border-top-right-radius: 100% 140%;
-    transform: scaleX(1.45);
-    box-shadow: 0 -8px 18px -14px hsl(var(--slate-blue) / 0.35);
+    transform: scaleX(1.1);
   }
 
-  .stepio-header-wave {
-    position: absolute;
-    left: -10%;
-    right: -10%;
-    bottom: 34px;
-    height: 42px;
+  .stepio-header-card {
+    @apply relative z-10 mx-4 mt-2 rounded-[22px] bg-white/90 px-4 py-3 shadow-sm;
+  }
+
+  .stepio-header-badge {
+    @apply inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold;
     background: hsl(var(--background));
-    border-top-left-radius: 100% 120%;
-    border-top-right-radius: 100% 120%;
-    opacity: 0.6;
-    filter: blur(0.2px);
+    color: hsl(var(--primary));
   }
 
   .stepio-header-content {
-    @apply relative z-10;
+    @apply relative z-10 px-4 pt-6 pb-3 text-center;
   }
 
   .stepio-header-lg {
-    @apply pt-8 pb-8 px-4;
-    min-height: 170px;
+    min-height: 200px;
   }
 
   .stepio-header-sm {
-    @apply pt-4 pb-3 px-4;
-    min-height: 72px;
+    min-height: 120px;
   }
 
   .modal-overlay {

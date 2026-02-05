@@ -42,12 +42,29 @@ export interface Milestone {
   photo?: string;
 }
 
+export interface DailyLog {
+  date: string; // YYYY-MM-DD
+  mood?: string;
+  food?: string;
+  sleep?: string;
+  crisis?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface StepioData {
   user: User | null;
   child: Child | null;
   medications: Medication[];
   events: Event[];
   milestones: Milestone[];
+  dailyLogs?: Record<string, DailyLog>;
+  plan?: {
+    tier: 'free' | 'pro';
+    status?: 'active' | 'inactive' | 'past_due' | 'canceled';
+    renewalDate?: string;
+  };
   settings?: {
     notifyEvents: boolean;
     notifyMeds: boolean;

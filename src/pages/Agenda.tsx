@@ -81,10 +81,12 @@ export function Agenda({ events, onAdd, onDelete }: AgendaProps) {
   return (
     <div className="pb-24">
       {/* Header */}
-      <header className="stepio-header stepio-header-sm">
+            <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <h1 className="text-2xl font-bold">Agenda 📅</h1>
-          <p className="text-muted-foreground">Compromissos e terapias</p>
+          <div className="stepio-header-card text-left">
+            <h1 className="text-2xl font-bold">Agenda 📅</h1>
+            <p className="text-muted-foreground">Compromissos e terapias</p>
+          </div>
         </div>
       </header>
 
@@ -296,4 +298,6 @@ export function Agenda({ events, onAdd, onDelete }: AgendaProps) {
     </div>
   );
 }
+
+
 

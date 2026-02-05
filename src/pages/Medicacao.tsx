@@ -54,10 +54,12 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
   return (
     <div className="pb-24">
       {/* Header */}
-      <header className="stepio-header stepio-header-sm">
+            <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <h1 className="text-2xl font-bold">Medicações 💊</h1>
-          <p className="text-muted-foreground">Gerencie os remédios do seu pequeno</p>
+          <div className="stepio-header-card text-left">
+            <h1 className="text-2xl font-bold">Medicações 💊</h1>
+            <p className="text-muted-foreground">Gerencie os remédios do seu pequeno</p>
+          </div>
         </div>
       </header>
 
@@ -258,3 +260,4 @@ export function Medicacao({ medications, onAdd, onDelete }: MedicacaoProps) {
     </div>
   );
 }
+

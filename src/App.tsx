@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Account from "./pages/Account";
+import Plans from "./pages/Plans";
+import BillingSuccess from "./pages/BillingSuccess";
+import BillingCanceled from "./pages/BillingCanceled";
 import { AuthProvider } from "@/context/AuthContext";
 import { RequireAuth } from "@/components/RequireAuth";
 
@@ -58,6 +61,30 @@ const App = () => (
               element={
                 <RequireAuth>
                   <Account />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/planos"
+              element={
+                <RequireAuth>
+                  <Plans />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/pagamento/sucesso"
+              element={
+                <RequireAuth>
+                  <BillingSuccess />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/pagamento/cancelado"
+              element={
+                <RequireAuth>
+                  <BillingCanceled />
                 </RequireAuth>
               }
             />

@@ -98,6 +98,7 @@ const Index = () => {
             child={data.child}
             medications={data.medications}
             events={data.events}
+            plan={data.plan}
           />
         );
     }

@@ -7,6 +7,9 @@ import { auth } from "@/lib/firebase";
 import { useStepioData } from "@/hooks/useStepioData";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/BottomNav";
+import { createPortalSession } from "@/lib/billing";
+import { exportDailyLogsToCsv } from "@/utils/exportDailyLogs";
+import { parseISO } from "date-fns";
 
 const Account = () => {
   const { data, loading, setUser, setChild, setNotificationSettings } = useStepioData();
@@ -22,6 +25,8 @@ const Account = () => {
   const [notifyMeds, setNotifyMeds] = useState(data.settings?.notifyMeds ?? true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
     setName(data.user?.name ?? "");
@@ -83,16 +88,18 @@ const Account = () => {
     <div className="mobile-container pb-24">
       <header className="stepio-header stepio-header-sm">
         <div className="stepio-header-content">
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-2 text-sm font-semibold text-primary shadow-sm"
-          >
-            <ArrowLeft size={16} />
-            Voltar ao menu
-          </button>
-          <h1 className="text-2xl font-bold">Minha Conta</h1>
-          <p className="text-muted-foreground">Gerencie seus dados</p>
+          <div className="stepio-header-card text-left">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-sm font-semibold text-primary shadow-sm"
+            >
+              <ArrowLeft size={16} />
+              Voltar ao menu
+            </button>
+            <h1 className="text-2xl font-bold">Minha Conta</h1>
+            <p className="text-muted-foreground">Gerencie seus dados</p>
+          </div>
         </div>
       </header>
 
@@ -212,6 +219,78 @@ const Account = () => {
           </button>
         </form>
 
+        <div className="stepio-card space-y-3">
+          <p className="text-sm font-semibold">Assinatura</p>
+          <p className="text-sm text-muted-foreground">
+            {data.plan?.tier === "pro" && data.plan?.status === "active"
+              ? "Plano Pro ativo"
+              : "Plano Free"}
+          </p>
+          {data.plan?.tier === "pro" && data.plan?.status === "active" ? (
+            <button
+              type="button"
+              onClick={async () => {
+                setBillingLoading(true);
+                try {
+                  const url = await createPortalSession();
+                  window.location.href = url;
+                } catch {
+                  setError("Não foi possível abrir o portal agora.");
+                } finally {
+                  setBillingLoading(false);
+                }
+              }}
+              className={cn(
+                "w-full py-3 rounded-2xl border border-border font-bold",
+                billingLoading && "opacity-70",
+              )}
+              disabled={billingLoading}
+            >
+              {billingLoading ? "Abrindo..." : "Gerenciar assinatura"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate("/planos")}
+              className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-bold"
+            >
+              Assinar Pro
+            </button>
+          )}
+        </div>
+
+        <div className="stepio-card space-y-3">
+          <p className="text-sm font-semibold">Exportar relatório</p>
+          {data.plan?.tier === "pro" && data.plan?.status === "active" ? (
+            <button
+              type="button"
+              onClick={() => {
+                const logs = Object.values(data.dailyLogs ?? {});
+                const now = new Date();
+                const monthPrefix = now.toISOString().slice(0, 7);
+                const monthLogs = logs.filter((log) => (log.date ?? "").startsWith(monthPrefix));
+                exportDailyLogsToCsv(monthLogs, now);
+              }}
+              className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-bold"
+            >
+              Exportar relatório
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowUpgrade(true)}
+                className="w-full py-3 rounded-2xl border border-border font-bold opacity-60"
+              >
+                Exportar relatório
+              </button>
+              <p className="text-xs text-muted-foreground">
+                Disponível apenas no Plano Pro.
+              </p>
+            </>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={() => signOut(auth)}
@@ -222,6 +301,36 @@ const Account = () => {
       </main>
 
       <BottomNav />
+
+      {showUpgrade && (
+        <div className="modal-overlay">
+          <div className="modal-sheet">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Desbloqueie o Pro</h2>
+              <button
+                type="button"
+                onClick={() => setShowUpgrade(false)}
+                className="p-2 rounded-xl border border-border"
+              >
+                Fechar
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              A exportação de relatórios é um recurso exclusivo do Plano Pro.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowUpgrade(false);
+                navigate("/planos");
+              }}
+              className="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-bold"
+            >
+              Ver planos
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

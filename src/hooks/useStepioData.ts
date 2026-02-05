@@ -17,6 +17,11 @@ const defaultData: StepioData = {
   medications: [],
   events: [],
   milestones: [],
+  dailyLogs: {},
+  plan: {
+    tier: 'free',
+    status: 'inactive',
+  },
   settings: {
     notifyEvents: true,
     notifyMeds: true,
@@ -49,6 +54,14 @@ export function useStepioData() {
           settings: {
             ...defaultData.settings,
             ...(loaded.settings ?? {}),
+          },
+          plan: {
+            ...defaultData.plan,
+            ...(loaded.plan ?? {}),
+          },
+          dailyLogs: {
+            ...(defaultData.dailyLogs ?? {}),
+            ...(loaded.dailyLogs ?? {}),
           },
         };
         setData(merged);
@@ -286,6 +299,29 @@ export function useStepioData() {
     });
   }, [persist]);
 
+  const setDailyLog = useCallback(
+    (date: string, log: Omit<import('@/types/stepio').DailyLog, 'date'>) => {
+      setData((prev) => {
+        const nextLogs = {
+          ...(prev.dailyLogs ?? {}),
+          [date]: {
+            ...(prev.dailyLogs?.[date] ?? {}),
+            ...log,
+            date,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+        const next = {
+          ...prev,
+          dailyLogs: nextLogs,
+        };
+        persist(next);
+        return next;
+      });
+    },
+    [persist],
+  );
+
   const resetData = useCallback(() => {
     setData(defaultData);
     persist(defaultData);
@@ -307,6 +343,7 @@ export function useStepioData() {
     addMilestone,
     updateMilestone,
     deleteMilestone,
+    setDailyLog,
     resetData,
   };
 }
