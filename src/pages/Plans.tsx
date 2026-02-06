@@ -1,39 +1,24 @@
 import { useMemo, useState } from "react";
 import { Check, Crown } from "lucide-react";
-import { createCheckoutSession, createPortalSession } from "@/lib/billing";
+import { openSubscriptionManagement, syncEntitlements } from "@/lib/billing";
 import { useStepioData } from "@/hooks/useStepioData";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/BottomNav";
 
-const monthlyPriceId = import.meta.env.VITE_STRIPE_PRICE_MONTHLY;
-const yearlyPriceId = import.meta.env.VITE_STRIPE_PRICE_YEARLY;
-
 export default function Plans() {
-  const { data } = useStepioData();
+  const { data, refreshPlan } = useStepioData();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
   const isPro = data.plan?.tier === "pro" && data.plan?.status === "active";
-
-  const priceId = useMemo(() => {
-    return billing === "monthly" ? monthlyPriceId : yearlyPriceId;
+  const priceLabel = useMemo(() => {
+    return billing === "monthly" ? "R$ 29,90 / mÃªs" : "R$ 286 / ano";
   }, [billing]);
 
-  const handleCheckout = async () => {
-    if (!priceId) return;
+  const handleSync = async () => {
     setLoading(true);
     try {
-      const url = await createCheckoutSession(priceId);
-      window.location.href = url;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePortal = async () => {
-    setLoading(true);
-    try {
-      const url = await createPortalSession();
-      window.location.href = url;
+      await syncEntitlements();
+      await refreshPlan();
     } finally {
       setLoading(false);
     }
@@ -63,7 +48,7 @@ export default function Plans() {
             {isPro && (
               <button
                 type="button"
-                onClick={handlePortal}
+                onClick={openSubscriptionManagement}
                 className="px-4 py-2 rounded-xl border border-border text-sm font-semibold"
               >
                 Gerenciar
@@ -99,9 +84,7 @@ export default function Plans() {
               <Crown size={18} className="text-primary" />
               <h2 className="text-lg font-bold">Pro</h2>
             </div>
-            <span className="text-sm font-semibold text-primary">
-              {billing === "monthly" ? "R$ 29,90 / mês" : "R$ 286 / ano"}
-            </span>
+            <span className="text-sm font-semibold text-primary">{priceLabel}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -144,11 +127,19 @@ export default function Plans() {
 
           <button
             type="button"
-            onClick={handleCheckout}
-            disabled={loading || !priceId}
+            onClick={openSubscriptionManagement}
             className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-lg transition-all duration-200 disabled:opacity-50"
           >
-            {loading ? "Redirecionando..." : "Assinar Pro"}
+            Assinar no app
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={loading}
+            className="w-full py-3 rounded-2xl border border-border text-sm font-semibold"
+          >
+            {loading ? "Sincronizando..." : "Sincronizar assinatura"}
           </button>
         </div>
       </main>

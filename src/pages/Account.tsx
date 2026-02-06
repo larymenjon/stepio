@@ -7,12 +7,12 @@ import { auth } from "@/lib/firebase";
 import { useStepioData } from "@/hooks/useStepioData";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/BottomNav";
-import { createPortalSession } from "@/lib/billing";
+import { openSubscriptionManagement, syncEntitlements } from "@/lib/billing";
 import { exportDailyLogsToCsv } from "@/utils/exportDailyLogs";
 import { parseISO } from "date-fns";
 
 const Account = () => {
-  const { data, loading, setUser, setChild, setNotificationSettings } = useStepioData();
+  const { data, loading, setUser, setChild, setNotificationSettings, refreshPlan } = useStepioData();
   const navigate = useNavigate();
   const [name, setName] = useState(data.user?.name ?? "");
   const [email, setEmail] = useState(data.user?.email ?? auth.currentUser?.email ?? "");
@@ -229,17 +229,7 @@ const Account = () => {
           {data.plan?.tier === "pro" && data.plan?.status === "active" ? (
             <button
               type="button"
-              onClick={async () => {
-                setBillingLoading(true);
-                try {
-                  const url = await createPortalSession();
-                  window.location.href = url;
-                } catch {
-                  setError("Não foi possível abrir o portal agora.");
-                } finally {
-                  setBillingLoading(false);
-                }
-              }}
+              onClick={openSubscriptionManagement}
               className={cn(
                 "w-full py-3 rounded-2xl border border-border font-bold",
                 billingLoading && "opacity-70",
@@ -257,6 +247,27 @@ const Account = () => {
               Assinar Pro
             </button>
           )}
+          <button
+            type="button"
+            onClick={async () => {
+              setBillingLoading(true);
+              try {
+                await syncEntitlements();
+                await refreshPlan();
+              } catch {
+                setError("Não foi possível sincronizar a assinatura agora.");
+              } finally {
+                setBillingLoading(false);
+              }
+            }}
+            className={cn(
+              "w-full py-3 rounded-2xl border border-border font-semibold",
+              billingLoading && "opacity-70",
+            )}
+            disabled={billingLoading}
+          >
+            {billingLoading ? "Sincronizando..." : "Sincronizar assinatura"}
+          </button>
         </div>
 
         <div className="stepio-card space-y-3">

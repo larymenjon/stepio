@@ -1,14 +1,13 @@
-# Stepio Billing Server (Stripe Checkout)
+# Stepio Billing Server (RevenueCat)
 
 ## Variáveis de ambiente
 
 Configure estas variáveis no host (Render) e no local (arquivo `.env` separado para o servidor):
 
 ```
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_MONTHLY=price_...
-STRIPE_PRICE_YEARLY=price_...
+REVENUECAT_API_KEY=sk_...
+REVENUECAT_ENTITLEMENT_ID=pro
+REVENUECAT_WEBHOOK_AUTH=Bearer rc_webhook_secret
 APP_URL=http://localhost:8080
 FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
 ```
@@ -26,14 +25,9 @@ npm install
 npm run dev:server
 ```
 
-## Webhook Stripe
+## Webhook RevenueCat
 
-Depois de subir o servidor, configure o webhook no Stripe:
+Depois de subir o servidor, configure o webhook no RevenueCat:
 
-- URL: `https://SEU_SERVIDOR/webhook`
-- Eventos:
-  - `checkout.session.completed`
-  - `customer.subscription.updated`
-  - `customer.subscription.deleted`
-
-Copie o `whsec_...` para `STRIPE_WEBHOOK_SECRET`.
+- URL: `https://SEU_SERVIDOR/webhook/revenuecat`
+- Authorization (opcional): use o mesmo valor de `REVENUECAT_WEBHOOK_AUTH`.

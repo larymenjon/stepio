@@ -322,6 +322,21 @@ export function useStepioData() {
     [persist],
   );
 
+  const refreshPlan = useCallback(async () => {
+    if (!authUser) return;
+    const ref = doc(db, 'users', authUser.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const loaded = snap.data() as StepioData;
+    setData((prev) => ({
+      ...prev,
+      plan: {
+        ...defaultData.plan,
+        ...(loaded.plan ?? {}),
+      },
+    }));
+  }, [authUser]);
+
   const resetData = useCallback(() => {
     setData(defaultData);
     persist(defaultData);
@@ -344,6 +359,7 @@ export function useStepioData() {
     updateMilestone,
     deleteMilestone,
     setDailyLog,
+    refreshPlan,
     resetData,
   };
 }

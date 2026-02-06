@@ -1,22 +1,18 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import Stripe from "stripe";
 import admin from "firebase-admin";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4242;
 const APP_URL = process.env.APP_URL || "http://localhost:8080";
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-const priceMonthly = process.env.STRIPE_PRICE_MONTHLY;
-const priceYearly = process.env.STRIPE_PRICE_YEARLY;
+const revenueCatApiKey = process.env.REVENUECAT_API_KEY;
+const revenueCatEntitlementId = process.env.REVENUECAT_ENTITLEMENT_ID || "pro";
+const revenueCatWebhookAuth = process.env.REVENUECAT_WEBHOOK_AUTH;
 
-if (!stripeSecret) {
-  throw new Error("Missing STRIPE_SECRET_KEY");
+if (!revenueCatApiKey) {
+  throw new Error("Missing REVENUECAT_API_KEY");
 }
-
-const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
 
 if (!admin.apps.length) {
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
@@ -42,13 +38,7 @@ app.use(
   }),
 );
 
-app.use((req, _res, next) => {
-  if (req.originalUrl === "/webhook") {
-    next();
-  } else {
-    express.json()(req, _res, next);
-  }
-});
+app.use(express.json());
 
 async function getUserFromAuth(req) {
   const authHeader = req.headers.authorization || "";
@@ -62,120 +52,94 @@ async function getUserFromAuth(req) {
   }
 }
 
-async function getOrCreateCustomer(uid, email) {
-  const userRef = db.collection("users").doc(uid);
-  const userSnap = await userRef.get();
-  const userData = userSnap.data() || {};
-  if (userData.stripeCustomerId) return userData.stripeCustomerId;
+async function fetchRevenueCatSubscriber(appUserId) {
+  const response = await fetch(
+    `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${revenueCatApiKey}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
 
-  const customer = await stripe.customers.create({
-    email,
-    metadata: { uid },
-  });
+  if (response.status === 404) {
+    return { subscriber: { entitlements: {} } };
+  }
 
-  await userRef.set({ stripeCustomerId: customer.id }, { merge: true });
-  return customer.id;
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "RevenueCat request failed");
+  }
+
+  return response.json();
 }
 
-app.post("/api/billing/create-checkout-session", async (req, res) => {
+function buildPlanFromEntitlement(entitlement) {
+  if (!entitlement) {
+    return { tier: "free", status: "inactive", renewalDate: null };
+  }
+
+  const expiresAt = entitlement.expires_date ? new Date(entitlement.expires_date) : null;
+  const now = new Date();
+  const isActive = !expiresAt || expiresAt > now;
+
+  return {
+    tier: isActive ? "pro" : "free",
+    status: isActive ? "active" : "inactive",
+    renewalDate: entitlement.expires_date ?? null,
+    productId: entitlement.product_identifier ?? null,
+  };
+}
+
+async function syncUserEntitlements(uid) {
+  const subscriber = await fetchRevenueCatSubscriber(uid);
+  const entitlement =
+    subscriber?.subscriber?.entitlements?.[revenueCatEntitlementId] ?? null;
+  const plan = buildPlanFromEntitlement(entitlement);
+
+  await db.collection("users").doc(uid).set({ plan }, { merge: true });
+  return plan;
+}
+
+app.post("/api/billing/sync-entitlements", async (req, res) => {
   const authUser = await getUserFromAuth(req);
   if (!authUser) {
     return res.status(401).send("Unauthorized");
   }
-
-  const { priceId } = req.body || {};
-  if (!priceId) return res.status(400).send("Missing priceId");
-
-  const customerId = await getOrCreateCustomer(authUser.uid, authUser.email);
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${APP_URL}/pagamento/sucesso`,
-    cancel_url: `${APP_URL}/pagamento/cancelado`,
-    metadata: {
-      uid: authUser.uid,
-    },
-  });
-
-  return res.json({ url: session.url });
-});
-
-app.post("/api/billing/create-portal-session", async (req, res) => {
-  const authUser = await getUserFromAuth(req);
-  if (!authUser) {
-    return res.status(401).send("Unauthorized");
-  }
-
-  const userRef = db.collection("users").doc(authUser.uid);
-  const userSnap = await userRef.get();
-  const userData = userSnap.data() || {};
-  if (!userData.stripeCustomerId) {
-    return res.status(400).send("Customer not found");
-  }
-
-  const session = await stripe.billingPortal.sessions.create({
-    customer: userData.stripeCustomerId,
-    return_url: `${APP_URL}/planos`,
-  });
-
-  return res.json({ url: session.url });
-});
-
-app.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  if (!webhookSecret) {
-    return res.status(200).send("Webhook disabled");
-  }
-
-  const sig = req.headers["stripe-signature"];
-  let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    const plan = await syncUserEntitlements(authUser.uid);
+    return res.json({ plan });
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(500).send(err?.message ?? "Failed to sync entitlements");
   }
+});
 
-  const data = event.data.object;
-
-  const handleUpdate = async (subscription) => {
-    const customerId = subscription.customer;
-    const status = subscription.status;
-    const priceId = subscription.items?.data?.[0]?.price?.id;
-    const tier =
-      priceId === priceMonthly || priceId === priceYearly ? "pro" : "free";
-
-    const users = await db.collection("users").where("stripeCustomerId", "==", customerId).get();
-    for (const doc of users.docs) {
-      await doc.ref.set(
-        {
-          plan: {
-            tier,
-            status,
-            renewalDate: subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000).toISOString()
-              : null,
-          },
-        },
-        { merge: true },
-      );
-    }
-  };
-
-  if (event.type === "checkout.session.completed") {
-    const session = data;
-    if (session.subscription) {
-      const subscription = await stripe.subscriptions.retrieve(session.subscription);
-      await handleUpdate(subscription);
+app.post("/webhook/revenuecat", async (req, res) => {
+  if (revenueCatWebhookAuth) {
+    const authHeader = req.headers.authorization || "";
+    if (authHeader !== revenueCatWebhookAuth) {
+      return res.status(401).send("Unauthorized");
     }
   }
 
-  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-    await handleUpdate(data);
+  const appUserId =
+    req.body?.event?.app_user_id ||
+    req.body?.app_user_id ||
+    req.body?.subscriber?.app_user_id ||
+    req.body?.event?.subscriber?.app_user_id;
+
+  if (!appUserId) {
+    return res.status(400).send("Missing app_user_id");
   }
 
-  return res.json({ received: true });
+  try {
+    await syncUserEntitlements(appUserId);
+    return res.json({ received: true });
+  } catch (err) {
+    return res.status(500).send(err?.message ?? "Failed to process webhook");
+  }
 });
 
 app.listen(PORT, () => {

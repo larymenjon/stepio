@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, isWithinInterval, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { useStepioData } from "@/hooks/useStepioData";
 import { cn } from "@/lib/utils";
@@ -91,6 +91,31 @@ export function DailyLog() {
   const [saved, setSaved] = useState(false);
   const [showMonth, setShowMonth] = useState(false);
   const [editing, setEditing] = useState(!existing);
+
+  useEffect(() => {
+    if (existing) {
+      setMood(existing.mood ?? "");
+      setFood(existing.food ?? "");
+      setSleep(existing.sleep ?? "");
+      setCrisis(existing.crisis ?? "");
+      setNotes(existing.notes ?? "");
+      setEditing(false);
+      return;
+    }
+
+    setMood("");
+    setFood("");
+    setSleep("");
+    setCrisis("");
+    setNotes("");
+    setEditing(true);
+  }, [
+    existing?.mood,
+    existing?.food,
+    existing?.sleep,
+    existing?.crisis,
+    existing?.notes,
+  ]);
 
   const canSave = useMemo(() => mood || food || sleep || crisis || notes, [mood, food, sleep, crisis, notes]);
 
